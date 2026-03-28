@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BioLab - Recepción Cloud v1.5</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; }
+        .container { max-width: 650px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        h2 { color: #2c3e50; text-align: center; margin-bottom: 5px;}
+        .subtitulo { text-align: center; color: #7f8c8d; font-size: 0.9em; margin-top: 0; margin-bottom: 20px;}
+        
+        input, select, button { width: 100%; padding: 10px; margin-top: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-family: Arial, sans-serif;}
+        
+        .fila-inputs { display: flex; gap: 10px; }
+        .fila-inputs > * { flex: 1; }
+
+        .btn-agregar { background-color: #3498db; color: white; border: none; font-weight: bold; cursor: pointer; }
+        .btn-agregar:hover { background-color: #2980b9; }
+        .btn-pdf { background-color: #e74c3c; color: white; border: none; font-weight: bold; cursor: pointer; margin-top: 20px; font-size: 1.1em;}
+        .btn-pdf:hover { background-color: #c0392b; }
+        
+        ul { list-style-type: none; padding: 0; }
+        li { background: #ecf0f1; margin-top: 5px; padding: 10px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }
+        .instrucciones { font-size: 0.8em; color: #7f8c8d; display: block; margin-top: 5px;}
+        .btn-eliminar { background-color: #e74c3c; color: white; border: none; border-radius: 3px; cursor: pointer; padding: 5px 10px; font-size: 0.8em; margin-top:0; width: auto;}
+        
+        .total-box { margin-top: 20px; padding: 15px; background-color: #e8f8f5; border-left: 5px solid #1abc9c; font-size: 1.1em; }
+        .total-box .gran-total { font-size: 1.2em; font-weight: bold; color: #2c3e50; }
+        .total-box .saldo { font-size: 1.2em; font-weight: bold; color: #e74c3c; margin-top: 10px; border-top: 1px dashed #bdc3c7; padding-top: 10px;}
+        
+        #area-impresion { padding: 20px; padding-bottom: 40px; background: white; border-radius: 8px; margin-top: 15px;} 
+        .seccion-titulo { background-color: #2c3e50; color: white; padding: 5px 10px; border-radius: 4px; font-size: 0.9em; margin-bottom: 10px; margin-top: 20px;}
+        
+        /* Estado de carga */
+        #loading { text-align: center; color: #3498db; font-weight: bold; padding: 20px; display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>🔬 Recepción Inteligente</h2>
+    <p class="subtitulo">Versión Beta Cloud (Conectado a Google Sheets)</p>
+    
+    <div id="loading">⏳ Cargando catálogo de estudios desde la nube...</div>
+
+    <div id="controles-recepcion" style="display: none; background: #fdfefe; padding: 15px; border: 1px solid #ecf0f1; border-radius: 6px;">
+        <label for="buscador"><strong>Buscador Rápido de Estudios:</strong></label>
+        <input type="text" id="buscador" placeholder="Escribe para buscar (Ej. 'Química' o 'Perfil')..." onkeyup="filtrarEstudios()">
+        
+        <select id="estudio" size="5" style="margin-top: 5px;">
+            </select>
+        <button class="btn-agregar" onclick="agregarEstudio()">Agregar a la Orden</button>
+    </div>
+
+    <div id="area-impresion">
+        <h3 style="text-align: center; color: #2c3e50; margin-bottom: 5px; font-size: 1.5em;">Ticket de Orden</h3>
+        <p style="text-align: center; font-size: 0.9em; color: #7f8c8d; margin-top: 0;">BioLab Chihuahua</p>
+        <hr style="border: 1px solid #ecf0f1; margin-bottom: 20px;">
+        
+        <div class="seccion-titulo">👤 Datos del Paciente</div>
+        <input type="text" id="nombrePac" placeholder="Nombre Completo del Paciente">
+        
+        <div class="fila-inputs">
+            <input type="number" id="edadPac" placeholder="Edad" min="0" max="120">
+            <select id="sexoPac">
+                <option value="">Sexo</option>
+                <option value="Masculino">Masculino</option>
+                <option value="Femenino">Femenino</option>
+            </select>
+        </div>
+        
+        <div class="seccion-titulo" style="margin-top: 30px;">📋 Estudios Solicitados</div>
+        <ul id="listaOrden"></ul>
+
+        <div class="seccion-titulo" style="margin-top: 30px; background-color: #27ae60;">💰 Detalles de Pago</div>
+        <div class="fila-inputs">
+            <select id="metodoPago">
+                <option value="Efectivo">Pago en Efectivo</option>
+                <option value="Tarjeta">Tarjeta (Débito/Crédito)</option>
+                <option value="Transferencia">Transferencia Bancaria</option>
+            </select>
+            <input type="number" id="anticipoInput" placeholder="Anticipo dejado ($)" oninput="calcularCaja()" min="0">
+        </div>
+
+        <div class="total-box">
+            <div class="gran-total">Total de la Orden: $<span id="granTotal">0</span> MXN</div>
+            <div style="font-size: 0.9em; color: #34495e; margin-top: 5px;">Anticipo Cubierto: $<span id="lblAnticipo">0</span> MXN</div>
+            <div class="saldo">Restante a pagar en entrega: $<span id="saldoRestante">0</span> MXN</div>
+        </div>
+    </div>
+
+    <button class="btn-pdf" onclick="descargarPDF()">📄 Generar PDF para el Paciente</button>
+</div>
+
+<script>
+    let total = 0;
+    
+    // ***************************************************************
+    // Enlace corregido para descargar datos en crudo (CSV)
+    // ***************************************************************
+    const URL_GOOGLE_SHEETS = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR66yXizCaHEubj6fXFqCym0caAb_avbm4Wn8p2Yq4Zu-9oU19CZHDTaxBb6HvP3nDyZ5eJNreAQMgf/pub?output=csv"; 
+    // ***************************************************************
+
+    // Al cargar la página, traemos los datos de la nube
+    window.onload = function() {
+        cargarCatalogoDesdeNube();
+    };
+
+    function cargarCatalogoDesdeNube() {
+        document.getElementById('loading').style.display = 'block';
+        
+        Papa.parse(URL_GOOGLE_SHEETS, {
+            download: true,
+            header: true, // Lee la primera fila como encabezados
+            complete: function(results) {
+                const datos = results.data;
+                const select = document.getElementById("estudio");
+                
+                // Limpiamos la lista por si acaso
+                select.innerHTML = "";
+
+                // Llenamos el selector con los datos reales del Sheets
+                datos.forEach(row => {
+                    if(row.Estudio && row.Precio) { // Validación básica
+                        let option = document.createElement("option");
+                        option.value = row.Precio.replace(/[^0-9.]/g, ''); // Limpiamos el precio de símbolos extraños
+                        option.text = `${row.Estudio} - $${row.Precio}`;
+                        // Combinamos Tubo e Indicaciones para el requisito
+                        option.setAttribute("data-req", `${row.Tubo || 'N/A'}. Muestra: ${row.Muestra || 'N/A'}. Req: ${row.Indicaciones || 'N/A'}.`);
+                        select.appendChild(option);
+                    }
+                });
+
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('controles-recepcion').style.display = 'block';
+            },
+            error: function(err) {
+                alert("Error crítico: No se pudo conectar con el Google Sheets.");
+                console.error(err);
+            }
+        });
+    }
+
+    // --- LOGICA OPERATIVA ---
+
+    function filtrarEstudios() {
+        let input = document.getElementById("buscador").value.toLowerCase();
+        let select = document.getElementById("estudio");
+        let opciones = select.options;
+        for (let i = 0; i < opciones.length; i++) {
+            let texto = opciones[i].text.toLowerCase();
+            opciones[i].style.display = texto.includes(input) ? "" : "none";
+        }
+    }
+
+    function agregarEstudio() {
+        let select = document.getElementById("estudio");
+        if(select.selectedIndex === -1 || select.options[select.selectedIndex].style.display === 'none') {
+            alert("Selecciona un estudio válido de la lista filtrada.");
+            return;
+        }
+        let precio = parseInt(select.options[select.selectedIndex].value);
+        let nombreEstudio = select.options[select.selectedIndex].text.split(' - ')[0];
+        let requisitos = select.options[select.selectedIndex].getAttribute("data-req");
+        let idUnico = Date.now();
+        total += precio;
+        document.getElementById("granTotal").innerText = total;
+        calcularCaja(); 
+        let lista = document.getElementById("listaOrden");
+        let nuevoItem = document.createElement("li");
+        nuevoItem.id = `item-${idUnico}`;
+        nuevoItem.innerHTML = `
+            <div style="flex-grow: 1;">
+                <strong>${nombreEstudio}</strong> ($${precio})
+                <span class="instrucciones">⚠️ ${requisitos}</span>
+            </div>
+            <button class="btn-eliminar ocultar-impresion" onclick="eliminarEstudio(${idUnico}, ${precio})">Quitar</button>
+        `;
+        lista.appendChild(nuevoItem);
+        document.getElementById("buscador").value = ""; 
+        filtrarEstudios(); 
+    }
+
+    function eliminarEstudio(id, precio) {
+        document.getElementById(`item-${id}`).remove();
+        total -= precio;
+        document.getElementById("granTotal").innerText = total;
+        calcularCaja();
+    }
+
+    function calcularCaja() {
+        let anticipo = parseInt(document.getElementById("anticipoInput").value) || 0;
+        let saldo = total - anticipo;
+        if (saldo < 0) saldo = 0;
+        document.getElementById("lblAnticipo").innerText = anticipo;
+        document.getElementById("saldoRestante").innerText = saldo;
+    }
+
+    function descargarPDF() {
+        let nombre = document.getElementById("nombrePac").value;
+        if (nombre.trim() === "") { alert("Ingresa el nombre del paciente."); return; }
+        if (total === 0) { alert("Agrega estudios a la orden."); return; }
+        let botonesQuitar = document.getElementsByClassName("btn-eliminar");
+        for(let i = 0; i < botonesQuitar.length; i++) { botonesQuitar[i].style.display = 'none'; }
+        var elemento = document.getElementById('area-impresion');
+        var opciones = {
+            margin: 10, filename: 'Orden_' + nombre.replace(/\s+/g, '_') + '.pdf',
+            image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, scrollY: 0 },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+        html2pdf().set(opciones).from(elemento).save().then(function() {
+            for(let i = 0; i < botonesQuitar.length; i++) { botonesQuitar[i].style.display = 'block'; }
+        });
+    }
+</script>
