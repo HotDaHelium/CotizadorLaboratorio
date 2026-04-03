@@ -16,21 +16,28 @@
         input, select { box-sizing: border-box; }
         input:focus, select:focus { outline: none; border-color: #3498db !important; }
 
-        /* Diseño elegante para la barra de desplazamiento */
+       /* Diseño elegante y FORZADO para la barra de desplazamiento */
+        #lista-resultados {
+            /* Fuerza a que el "carril" de la barra siempre sea visible */
+            overflow-y: scroll !important; 
+            -webkit-overflow-scrolling: touch; 
+        }
+        
         #lista-resultados::-webkit-scrollbar {
-            width: 8px;
-            display: block;
+            width: 8px !important;
+            display: block !important;
+            -webkit-appearance: none;
         }
+        
         #lista-resultados::-webkit-scrollbar-track {
-            background: #f1f1f1; 
+            background: #f1f1f1 !important; 
             border-radius: 8px;
         }
+        
         #lista-resultados::-webkit-scrollbar-thumb {
-            background: #bdc3c7; 
+            background-color: #bdc3c7 !important; 
             border-radius: 8px;
-        }
-        #lista-resultados::-webkit-scrollbar-thumb:hover {
-            background: #95a5a6; 
+            border: 2px solid #f1f1f1; 
         }
     </style>
 </head>
@@ -234,7 +241,7 @@
             }
         }
 
-        function descargarPDF() {
+       function descargarPDF() {
             let nombre = document.getElementById("nombrePaciente").value || "Paciente_General";
             let telefono = document.getElementById("telPaciente").value || "N/A";
             let edad = document.getElementById("edadPaciente").value || "N/A";
@@ -255,6 +262,9 @@
             botones.forEach(btn => btn.remove());
 
             let elementoPDF = document.createElement('div');
+            // AQUÍ ESTÁ LA MAGIA PARA QUE NO SE CORTE: Le damos un ancho fijo de 750px
+            elementoPDF.style.width = "750px";
+            elementoPDF.style.boxSizing = "border-box";
             elementoPDF.style.padding = "30px";
             elementoPDF.style.fontFamily = "Arial, sans-serif";
             elementoPDF.style.color = "#2c3e50";
@@ -280,10 +290,10 @@
             `;
 
             let opciones = {
-                margin:       0.5,
-                filename:     `Ticket_${nombre.replace(/\\s+/g, '_')}.pdf`,
+                margin:       0.4, // Margen de seguridad en todos los bordes
+                filename:     `Ticket_${nombre.replace(/\s+/g, '_')}.pdf`,
                 image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2 },
+                html2canvas:  { scale: 2, windowWidth: 800 }, // Obligamos a la "cámara" a tomar la foto en formato ancho
                 jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
             };
 
