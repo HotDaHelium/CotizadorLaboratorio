@@ -60,18 +60,36 @@
         <p style="text-align: center; font-size: 0.9em; color: #7f8c8d; margin-top: 0;">BioLab Chihuahua</p>
         <hr style="border: 1px solid #ecf0f1; margin-bottom: 20px;">
         
-        <div class="seccion-titulo">👤 Datos del Paciente</div>
-        <input type="text" id="nombrePac" placeholder="Nombre Completo del Paciente">
-        
-        <div class="fila-inputs">
-            <input type="number" id="edadPac" placeholder="Edad" min="0" max="120">
-            <select id="sexoPac">
-                <option value="">Sexo</option>
-                <option value="Masculino">Masculino</option>
-                <option value="Femenino">Femenino</option>
-            </select>
+        <div class="card">
+    <h3><i class="fas fa-user"></i> Datos del Paciente</h3>
+    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <input type="text" id="nombrePaciente" placeholder="Nombre completo" style="flex: 2; padding: 10px;">
+        <input type="tel" id="telPaciente" placeholder="Teléfono (Opcional)" style="flex: 1; padding: 10px;">
+    </div>
+</div>
+
+<div class="card" style="position: relative;">
+    <input type="text" id="buscador" placeholder="🔍 Buscar estudio (ej: Glucosa...)" onkeyup="filtrarEstudios()" style="width: 100%; padding: 12px; font-size: 16px; border: 1px solid #ccc; border-radius: 4px;">
+    
+    <div id="lista-resultados" style="display: none; position: absolute; z-index: 1000; background: white; width: 100%; max-height: 250px; overflow-y: auto; border: 1px solid #ddd; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-radius: 8px; margin-top: 5px;">
         </div>
-        
+</div>
+
+<div class="card" style="background-color: #e8f8f5;">
+    <h3><i class="fas fa-cash-register"></i> Detalles de Pago</h3>
+    <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+        <div>
+            <label>Anticipo ($):</label>
+            <input type="number" id="anticipo" value="0" oninput="calcularCaja()" style="width: 100px; padding: 5px;">
+        </div>
+        <div>
+            <label>Descuento Especial (%):</label>
+            <input type="number" id="porcentajeDescuento" value="0" min="0" max="100" oninput="calcularCaja()" style="width: 80px; padding: 5px;">
+        </div>
+    </div>
+    <div id="granTotal" style="font-size: 1.4em; font-weight: bold; margin-top: 15px; color: #2c3e50;">Total: $0</div>
+    <div id="mensajeCobro" style="margin-top: 10px; font-size: 1.1em;"></div>
+</div>
         <div class="seccion-titulo" style="margin-top: 30px;">📋 Estudios Solicitados</div>
         <ul id="listaOrden"></ul>
 
@@ -146,73 +164,96 @@
 
     // --- LOGICA OPERATIVA ---
 
-    function filtrarEstudios() {
-        let input = document.getElementById("buscador").value.toLowerCase();
-        let select = document.getElementById("estudio");
-        let opciones = select.options;
-        for (let i = 0; i < opciones.length; i++) {
-            let texto = opciones[i].text.toLowerCase();
-            opciones[i].style.display = texto.includes(input) ? "" : "none";
-        }
+   // Buscador inteligente (Tap-friendly)
+function filtrarEstudios() {
+    let input = document.getElementById("buscador").value.toLowerCase();
+    let contenedor = document.getElementById("lista-resultados");
+    contenedor.innerHTML = ""; 
+
+    if (input.length < 2) { 
+        contenedor.style.display = "none";
+        return;
     }
 
-    function agregarEstudio() {
-        let select = document.getElementById("estudio");
-        if(select.selectedIndex === -1 || select.options[select.selectedIndex].style.display === 'none') {
-            alert("Selecciona un estudio válido de la lista filtrada.");
-            return;
-        }
-        let precio = parseInt(select.options[select.selectedIndex].value);
-        let nombreEstudio = select.options[select.selectedIndex].text.split(' - ')[0];
-        let requisitos = select.options[select.selectedIndex].getAttribute("data-req");
-        let idUnico = Date.now();
-        total += precio;
-        document.getElementById("granTotal").innerText = total;
-        calcularCaja(); 
-        let lista = document.getElementById("listaOrden");
-        let nuevoItem = document.createElement("li");
-        nuevoItem.id = `item-${idUnico}`;
-        nuevoItem.innerHTML = `
-            <div style="flex-grow: 1;">
-                <strong>${nombreEstudio}</strong> ($${precio})
-                <span class="instrucciones">⚠️ ${requisitos}</span>
-            </div>
-            <button class="btn-eliminar ocultar-impresion" onclick="eliminarEstudio(${idUnico}, ${precio})">Quitar</button>
-        `;
-        lista.appendChild(nuevoItem);
-        document.getElementById("buscador").value = ""; 
-        filtrarEstudios(); 
-    }
+    let filtrados = catalogoGlobal.filter(e => e.nombre.toLowerCase().includes(input));
 
-    function eliminarEstudio(id, precio) {
-        document.getElementById(`item-${id}`).remove();
-        total -= precio;
-        document.getElementById("granTotal").innerText = total;
-        calcularCaja();
-    }
-
-    function calcularCaja() {
-        let anticipo = parseInt(document.getElementById("anticipoInput").value) || 0;
-        let saldo = total - anticipo;
-        if (saldo < 0) saldo = 0;
-        document.getElementById("lblAnticipo").innerText = anticipo;
-        document.getElementById("saldoRestante").innerText = saldo;
-    }
-
-    function descargarPDF() {
-        let nombre = document.getElementById("nombrePac").value;
-        if (nombre.trim() === "") { alert("Ingresa el nombre del paciente."); return; }
-        if (total === 0) { alert("Agrega estudios a la orden."); return; }
-        let botonesQuitar = document.getElementsByClassName("btn-eliminar");
-        for(let i = 0; i < botonesQuitar.length; i++) { botonesQuitar[i].style.display = 'none'; }
-        var elemento = document.getElementById('area-impresion');
-        var opciones = {
-            margin: 10, filename: 'Orden_' + nombre.replace(/\s+/g, '_') + '.pdf',
-            image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, scrollY: 0 },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        };
-        html2pdf().set(opciones).from(elemento).save().then(function() {
-            for(let i = 0; i < botonesQuitar.length; i++) { botonesQuitar[i].style.display = 'block'; }
+    if (filtrados.length > 0) {
+        contenedor.style.display = "block";
+        filtrados.forEach(est => {
+            let item = document.createElement("div");
+            item.style.padding = "15px";
+            item.style.borderBottom = "1px solid #f0f0f0";
+            item.style.cursor = "pointer";
+            item.innerHTML = `
+                <div style="font-weight: bold; color: #2c3e50;">${est.nombre}</div>
+                <div style="font-size: 0.9em; color: #27ae60;">$${est.precio}</div>
+            `;
+            
+            // Efecto visual al tocar en celulares
+            item.ontouchstart = function() { this.style.backgroundColor = "#e8f8f5"; };
+            item.ontouchend = function() { this.style.backgroundColor = "white"; };
+            
+            // Evento principal: Agrega sin cerrar la lista
+            item.onclick = function() {
+                agregarEstudioDirecto(est);
+            };
+            
+            contenedor.appendChild(item);
         });
+    } else {
+        contenedor.style.display = "none";
     }
-</script>
+}
+
+// Cierra la lista solo si tocan fuera del buscador
+document.addEventListener("click", function(event) {
+    if (!event.target.closest("#buscador") && !event.target.closest("#lista-resultados")) {
+        document.getElementById("lista-resultados").style.display = "none";
+    }
+});
+
+// Agrega a la orden con botón de borrar estilizado
+function agregarEstudioDirecto(estudioObj) {
+    let idUnico = Date.now() + Math.random(); 
+    total += estudioObj.precio;
+    
+    let lista = document.getElementById("listaOrden");
+    let nuevoItem = document.createElement("li");
+    nuevoItem.id = `item-${idUnico}`;
+    nuevoItem.style.marginBottom = "10px";
+    nuevoItem.innerHTML = `
+        <div style="flex-grow: 1;">
+            <strong>${estudioObj.nombre}</strong> <span style="color: #27ae60;">($${estudioObj.precio})</span>
+            <br><small style="color: #666;">⚠️ ${estudioObj.req}</small>
+        </div>
+        <button onclick="eliminarEstudio(${idUnico}, ${estudioObj.precio})" style="background:#ff7675; color:white; border:none; border-radius:4px; padding:8px 12px; margin-left:10px; cursor:pointer;">X</button>
+    `;
+    lista.appendChild(nuevoItem);
+    calcularCaja();
+}
+
+// Matemática de caja con manejo de descuentos
+function calcularCaja() {
+    let anticipo = parseFloat(document.getElementById("anticipo").value) || 0;
+    let porcentajeDesc = parseFloat(document.getElementById("porcentajeDescuento").value) || 0;
+    
+    let montoDescuento = total * (porcentajeDesc / 100);
+    let totalFinal = total - montoDescuento;
+    let restante = totalFinal - anticipo;
+
+    let resumenTotal = `Total Original: $${total}`;
+    if(porcentajeDesc > 0) {
+        resumenTotal = `<s>$${total}</s> | Desc. ${porcentajeDesc}%: <span style="color: red;">-$${montoDescuento.toFixed(2)}</span> | Total a Pagar: $${totalFinal.toFixed(2)}`;
+    }
+    
+    document.getElementById("granTotal").innerHTML = resumenTotal;
+    
+    let msg = document.getElementById("mensajeCobro");
+    if (total === 0) {
+        msg.innerHTML = ``;
+    } else if (restante > 0) {
+        msg.innerHTML = `<b style="color:red;">Restante a liquidar: $${restante.toFixed(2)} MXN</b>`;
+    } else {
+        msg.innerHTML = `<b style="color:green;">LIQUIDADO (Cambio: $${Math.abs(restante).toFixed(2)})</b>`;
+    }
+}
