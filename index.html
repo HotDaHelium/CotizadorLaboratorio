@@ -5,7 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Punto de Venta - BioLab</title>
     
-   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     
     <style>
@@ -245,7 +249,7 @@
             }
         }
 
-function descargarPDF() {
+        function descargarPDF() {
             if (total === 0) {
                 alert("⚠️ No hay estudios agregados a la orden.");
                 return;
@@ -265,7 +269,7 @@ function descargarPDF() {
 
             // 2. Encendemos el motor matemático (jsPDF)
             const { jsPDF } = window.jspdf;
-            const doc = new jsPDF(); // Por defecto crea una hoja Tamaño Carta
+            const doc = new jsPDF(); 
 
             // 3. Encabezado del Laboratorio
             doc.setFont("helvetica", "bold");
@@ -278,7 +282,7 @@ function descargarPDF() {
             doc.setTextColor(100, 100, 100);
             doc.text(`Fecha: ${new Date().toLocaleDateString()} | Hora: ${new Date().toLocaleTimeString()}`, 105, 28, { align: "center" });
 
-            // Una línea separadora elegante
+            // Línea separadora
             doc.setDrawColor(44, 62, 80);
             doc.setLineWidth(0.5);
             doc.line(14, 32, 196, 32);
@@ -315,7 +319,6 @@ function descargarPDF() {
                 let span = li.querySelector("span") ? li.querySelector("span").innerText : "";
                 let small = li.querySelector("small") ? li.querySelector("small").innerText.replace('⚠️ ', '') : "";
                 
-                // Agregamos el nombre y abajo las indicaciones
                 tableData.push([`${strong}\n(${small})`, span]);
             });
 
@@ -328,12 +331,12 @@ function descargarPDF() {
                 headStyles: { fillColor: [44, 62, 80], fontSize: 12 },
                 styles: { fontSize: 10, cellPadding: 5 },
                 columnStyles: {
-                    0: { cellWidth: 140 }, // Columna ancha para el nombre
-                    1: { cellWidth: 40, halign: 'right', textColor: [39, 174, 96], fontStyle: 'bold' } // Columna verde para precios
+                    0: { cellWidth: 140 }, 
+                    1: { cellWidth: 40, halign: 'right', textColor: [39, 174, 96], fontStyle: 'bold' } 
                 }
             });
 
-            // 6. Totales Matemáticos (Calculamos en qué coordenada Y terminó la tabla)
+            // 6. Totales Matemáticos
             let finalY = doc.lastAutoTable.finalY + 15;
 
             doc.setFontSize(12);
@@ -342,7 +345,7 @@ function descargarPDF() {
 
             if (porcentajeDesc > 0) {
                 finalY += 8;
-                doc.setTextColor(231, 76, 60); // Letras rojas
+                doc.setTextColor(231, 76, 60);
                 doc.text(`Descuento Especial (${porcentajeDesc}%): -$${montoDescuento.toFixed(2)}`, 196, finalY, { align: "right" });
 
                 finalY += 8;
