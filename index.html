@@ -3,319 +3,241 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BioLab - Recepción Cloud v1.5</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <title>Punto de Venta - BioLab</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; }
-        .container { max-width: 650px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-        h2 { color: #2c3e50; text-align: center; margin-bottom: 5px;}
-        .subtitulo { text-align: center; color: #7f8c8d; font-size: 0.9em; margin-top: 0; margin-bottom: 20px;}
-        
-        input, select, button { width: 100%; padding: 10px; margin-top: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-family: Arial, sans-serif;}
-        
-        .fila-inputs { display: flex; gap: 10px; }
-        .fila-inputs > * { flex: 1; }
-
-        .btn-agregar { background-color: #3498db; color: white; border: none; font-weight: bold; cursor: pointer; }
-        .btn-agregar:hover { background-color: #2980b9; }
-        .btn-pdf { background-color: #e74c3c; color: white; border: none; font-weight: bold; cursor: pointer; margin-top: 20px; font-size: 1.1em;}
-        .btn-pdf:hover { background-color: #c0392b; }
-        
-        ul { list-style-type: none; padding: 0; }
-        li { background: #ecf0f1; margin-top: 5px; padding: 10px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }
-        .instrucciones { font-size: 0.8em; color: #7f8c8d; display: block; margin-top: 5px;}
-        .btn-eliminar { background-color: #e74c3c; color: white; border: none; border-radius: 3px; cursor: pointer; padding: 5px 10px; font-size: 0.8em; margin-top:0; width: auto;}
-        
-        .total-box { margin-top: 20px; padding: 15px; background-color: #e8f8f5; border-left: 5px solid #1abc9c; font-size: 1.1em; }
-        .total-box .gran-total { font-size: 1.2em; font-weight: bold; color: #2c3e50; }
-        .total-box .saldo { font-size: 1.2em; font-weight: bold; color: #e74c3c; margin-top: 10px; border-top: 1px dashed #bdc3c7; padding-top: 10px;}
-        
-        #area-impresion { padding: 20px; padding-bottom: 40px; background: white; border-radius: 8px; margin-top: 15px;} 
-        .seccion-titulo { background-color: #2c3e50; color: white; padding: 5px 10px; border-radius: 4px; font-size: 0.9em; margin-bottom: 10px; margin-top: 20px;}
-        
-        /* Estado de carga */
-        #loading { text-align: center; color: #3498db; font-weight: bold; padding: 20px; display: none; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f6f8; margin: 0; padding: 20px; color: #333; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        h3 { margin-top: 0; color: #2c3e50; border-bottom: 2px solid #ecf0f1; padding-bottom: 10px; }
+        input, select { box-sizing: border-box; }
+        input:focus, select:focus { outline: none; border-color: #3498db !important; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>🔬 Recepción Inteligente</h2>
-    <p class="subtitulo">Versión Beta Cloud (Conectado a Google Sheets)</p>
-    
-    <div id="loading">⏳ Cargando catálogo de estudios desde la nube...</div>
+    <h1 style="text-align: center; color: #2c3e50;">Mostrador BioLab</h1>
 
-   <div id="controles-recepcion" style="display: none;">
-
-    <div class="card">
-        <h3><i class="fas fa-user"></i> Datos del Paciente</h3>
-        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
-            <input type="text" id="nombrePaciente" placeholder="Nombre completo" style="flex: 2; min-width: 200px; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
-            <input type="tel" id="telPaciente" placeholder="Teléfono (Opcional)" style="flex: 1; min-width: 150px; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
-        </div>
-        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <input type="number" id="edadPaciente" placeholder="Edad" min="0" style="width: 100px; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
-            <select id="sexoPaciente" style="padding: 10px; border: 1px solid #ccc; border-radius: 4px; background: white; flex-grow: 1; max-width: 150px;">
-                <option value="">Sexo...</option>
-                <option value="Femenino">Femenino</option>
-                <option value="Masculino">Masculino</option>
-            </select>
-        </div>
+    <div id="loading" style="text-align: center; font-size: 1.2em; padding: 50px; color: #7f8c8d;">
+        <i class="fas fa-spinner fa-spin"></i> Conectando con lista de precios...
     </div>
 
-    <div class="card" style="position: relative;">
-        <input type="text" id="buscador" placeholder="🔍 Buscar estudio (ej: Glucosa, Perfil...)" onkeyup="filtrarEstudios()" style="width: 100%; padding: 12px; font-size: 16px; border: 1px solid #ccc; border-radius: 4px;">
-        <div id="lista-resultados" style="display: none; position: absolute; z-index: 1000; background: white; width: 100%; max-height: 250px; overflow-y: auto; border: 1px solid #ddd; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-radius: 8px; margin-top: 5px;">
-        </div>
-    </div>
+    <div id="controles-recepcion" style="display: none; max-width: 800px; margin: auto;">
 
-    <div class="card">
-        <h3><i class="fas fa-flask"></i> Estudios a Realizar</h3>
-        <ul id="listaOrden" style="list-style: none; padding: 0; margin-bottom: 0;">
-            </ul>
-    </div>
-
-    <div class="card" style="background-color: #e8f8f5;">
-        <h3><i class="fas fa-cash-register"></i> Detalles de Pago</h3>
-        <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
-            <div>
-                <label>Anticipo ($):</label>
-                <input type="number" id="anticipo" value="0" oninput="calcularCaja()" style="width: 100px; padding: 5px;">
+        <div class="card">
+            <h3><i class="fas fa-user"></i> Datos del Paciente</h3>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
+                <input type="text" id="nombrePaciente" placeholder="Nombre completo" style="flex: 2; min-width: 200px; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
+                <input type="tel" id="telPaciente" placeholder="Teléfono (Opcional)" style="flex: 1; min-width: 150px; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
             </div>
-            <div>
-                <label>Descuento Especial (%):</label>
-                <input type="number" id="porcentajeDescuento" value="0" min="0" max="100" oninput="calcularCaja()" style="width: 80px; padding: 5px;">
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <input type="number" id="edadPaciente" placeholder="Edad" min="0" style="width: 100px; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
+                <select id="sexoPaciente" style="padding: 10px; border: 1px solid #ccc; border-radius: 4px; background: white; flex-grow: 1; max-width: 150px;">
+                    <option value="">Sexo...</option>
+                    <option value="Femenino">Femenino</option>
+                    <option value="Masculino">Masculino</option>
+                </select>
             </div>
         </div>
-        <div id="granTotal" style="font-size: 1.4em; font-weight: bold; margin-top: 15px; color: #2c3e50;">Total: $0</div>
-        <div id="mensajeCobro" style="margin-top: 10px; font-size: 1.1em;"></div>
+
+        <div class="card" style="position: relative;">
+            <input type="text" id="buscador" placeholder="🔍 Buscar estudio (ej: Glucosa, Perfil...)" onkeyup="filtrarEstudios()" style="width: 100%; padding: 12px; font-size: 16px; border: 1px solid #ccc; border-radius: 4px;">
+            <div id="lista-resultados" style="display: none; position: absolute; z-index: 1000; background: white; width: 100%; max-height: 250px; overflow-y: auto; border: 1px solid #ddd; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-radius: 8px; margin-top: 5px;"></div>
+        </div>
+
+        <div class="card">
+            <h3><i class="fas fa-flask"></i> Estudios a Realizar</h3>
+            <ul id="listaOrden" style="list-style: none; padding: 0; margin-bottom: 0;"></ul>
+        </div>
+
+        <div class="card" style="background-color: #e8f8f5;">
+            <h3><i class="fas fa-cash-register"></i> Detalles de Pago</h3>
+            <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+                <div>
+                    <label>Anticipo ($):</label>
+                    <input type="number" id="anticipo" value="0" oninput="calcularCaja()" style="width: 100px; padding: 5px; border: 1px solid #ccc; border-radius: 4px;">
+                </div>
+                <div>
+                    <label>Descuento Especial (%):</label>
+                    <input type="number" id="porcentajeDescuento" value="0" min="0" max="100" oninput="calcularCaja()" style="width: 80px; padding: 5px; border: 1px solid #ccc; border-radius: 4px;">
+                </div>
+            </div>
+            <div id="granTotal" style="font-size: 1.4em; font-weight: bold; margin-top: 15px; color: #2c3e50;">Total Original: $0</div>
+            <div id="mensajeCobro" style="margin-top: 10px; font-size: 1.1em;"></div>
+        </div>
+
+        <div style="text-align: center; margin-top: 20px;">
+            <button onclick="descargarPDF()" style="background-color: #2c3e50; color: white; padding: 15px 30px; border: none; border-radius: 8px; font-size: 1.2em; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: 0.3s;">
+                📄 Generar PDF para el Paciente
+            </button>
+        </div>
+
     </div>
 
-    <div style="text-align: center; margin-top: 20px;">
-        <button class="btn-pdf" onclick="descargarPDF()" style="background-color: #2c3e50; color: white; padding: 15px 30px; border: none; border-radius: 8px; font-size: 1.2em; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-            📄 Generar PDF para el Paciente
-        </button>
-    </div>
-    
-<script>
-    let total = 0;
-    
-    // ***************************************************************
-    // Enlace corregido para descargar datos en crudo (CSV)
-    // ***************************************************************
-    const URL_GOOGLE_SHEETS = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR66yXizCaHEubj6fXFqCym0caAb_avbm4Wn8p2Yq4Zu-9oU19CZHDTaxBb6HvP3nDyZ5eJNreAQMgf/pub?output=csv"; 
-    // ***************************************************************
-
-    // Al cargar la página, traemos los datos de la nube
-    window.onload = function() {
-        cargarCatalogoDesdeNube();
-    };
-
-    function cargarCatalogoDesdeNube() {
-        document.getElementById('loading').style.display = 'block';
+    <script>
+        let total = 0;
+        let catalogoGlobal = []; 
         
-        Papa.parse(URL_GOOGLE_SHEETS, {
-            download: true,
-            header: true, // Lee la primera fila como encabezados
-            complete: function(results) {
-                const datos = results.data;
-                const select = document.getElementById("estudio");
-                
-                // Limpiamos la lista por si acaso
-                select.innerHTML = "";
+        // Tu conexión exacta al Google Sheets
+        const URL_GOOGLE_SHEETS = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR66yXizCaHEubj6fXFqCym0caAb_avbm4Wn8p2Yq4Zu-9oU19CZHDTaxBb6HvP3nDyZ5eJNreAQMgf/pub?output=csv";
 
-                // Llenamos el selector con los datos reales del Sheets
-                datos.forEach(row => {
-                    if(row.Estudio && row.Precio) { // Validación básica
-                        let option = document.createElement("option");
-                        option.value = row.Precio.replace(/[^0-9.]/g, ''); // Limpiamos el precio de símbolos extraños
-                        option.text = `${row.Estudio} - $${row.Precio}`;
-                        // Combinamos Tubo e Indicaciones para el requisito
-                        option.setAttribute("data-req", `${row.Tubo || 'N/A'}. Muestra: ${row.Muestra || 'N/A'}. Req: ${row.Indicaciones || 'N/A'}.`);
-                        select.appendChild(option);
-                    }
-                    // Extraemos los nuevos datos de las casillas
-let telefono = document.getElementById("telPaciente").value || "N/A";
-let edad = document.getElementById("edadPaciente").value || "N/A";
-let sexo = document.getElementById("sexoPaciente").value || "N/A";
+        window.onload = function() {
+            cargarCatalogoDesdeNube();
+        };
+
+        function cargarCatalogoDesdeNube() {
+            document.getElementById('loading').style.display = 'block';
+            
+            Papa.parse(URL_GOOGLE_SHEETS, {
+                download: true,
+                header: true,
+                complete: function(results) {
+                    const datos = results.data;
+                    catalogoGlobal = []; 
+                    
+                    datos.forEach(row => {
+                        if(row.Estudio && row.Precio) {
+                            catalogoGlobal.push({
+                                nombre: row.Estudio,
+                                precio: parseFloat(row.Precio.replace(/[^0-9.]/g, '')),
+                                req: `${row.Tubo || 'N/A'}. Muestra: ${row.Muestra || 'N/A'}. Req: ${row.Indicaciones || 'N/A'}.`
+                            });
+                        }
+                    });
+
+                    // Si todo sale bien, prende las luces de la interfaz
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('controles-recepcion').style.display = 'block';
+                },
+                error: function(err) {
+                    alert("Error crítico: No se pudo conectar con el Google Sheets.");
+                    console.error(err);
+                }
+            });
+        }
+
+        function filtrarEstudios() {
+            let input = document.getElementById("buscador").value.toLowerCase();
+            let contenedor = document.getElementById("lista-resultados");
+            contenedor.innerHTML = ""; 
+
+            if (input.length < 2) { 
+                contenedor.style.display = "none";
+                return;
+            }
+
+            let filtrados = catalogoGlobal.filter(e => e.nombre.toLowerCase().includes(input));
+
+            if (filtrados.length > 0) {
+                contenedor.style.display = "block";
+                filtrados.forEach(est => {
+                    let item = document.createElement("div");
+                    item.style.padding = "15px";
+                    item.style.borderBottom = "1px solid #f0f0f0";
+                    item.style.cursor = "pointer";
+                    item.innerHTML = `<div style="font-weight: bold; color: #2c3e50;">${est.nombre}</div><div style="font-size: 0.9em; color: #27ae60;">$${est.precio}</div>`;
+                    
+                    // Tap-friendly effects
+                    item.ontouchstart = function() { this.style.backgroundColor = "#e8f8f5"; };
+                    item.ontouchend = function() { this.style.backgroundColor = "white"; };
+                    
+                    item.onclick = function() { agregarEstudioDirecto(est); };
+                    contenedor.appendChild(item);
                 });
+            } else {
+                contenedor.style.display = "none";
+            }
+        }
 
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('controles-recepcion').style.display = 'block';
-            },
-            error: function(err) {
-                alert("Error crítico: No se pudo conectar con el Google Sheets.");
-                console.error(err);
+        // Cierra lista al tocar afuera
+        document.addEventListener("click", function(event) {
+            if (!event.target.closest("#buscador") && !event.target.closest("#lista-resultados")) {
+                let lista = document.getElementById("lista-resultados");
+                if(lista) lista.style.display = "none";
             }
         });
-    }
 
-    // --- LOGICA OPERATIVA ---
-
-   // Buscador inteligente (Tap-friendly)
-function filtrarEstudios() {
-    let input = document.getElementById("buscador").value.toLowerCase();
-    let contenedor = document.getElementById("lista-resultados");
-    contenedor.innerHTML = ""; 
-
-    if (input.length < 2) { 
-        contenedor.style.display = "none";
-        return;
-    }
-
-    let filtrados = catalogoGlobal.filter(e => e.nombre.toLowerCase().includes(input));
-
-    if (filtrados.length > 0) {
-        contenedor.style.display = "block";
-        filtrados.forEach(est => {
-            let item = document.createElement("div");
-            item.style.padding = "15px";
-            item.style.borderBottom = "1px solid #f0f0f0";
-            item.style.cursor = "pointer";
-            item.innerHTML = `
-                <div style="font-weight: bold; color: #2c3e50;">${est.nombre}</div>
-                <div style="font-size: 0.9em; color: #27ae60;">$${est.precio}</div>
+        function agregarEstudioDirecto(estudioObj) {
+            let idUnico = Date.now() + Math.random(); 
+            total += estudioObj.precio;
+            
+            let lista = document.getElementById("listaOrden");
+            let nuevoItem = document.createElement("li");
+            nuevoItem.id = `item-${idUnico}`;
+            nuevoItem.style.marginBottom = "10px";
+            nuevoItem.innerHTML = `
+                <div style="flex-grow: 1;">
+                    <strong>${estudioObj.nombre}</strong> <span style="color: #27ae60;">($${estudioObj.precio})</span>
+                    <br><small style="color: #666;">⚠️ ${estudioObj.req}</small>
+                </div>
+                <button onclick="eliminarEstudio('${idUnico}', ${estudioObj.precio})" style="background:#ff7675; color:white; border:none; border-radius:4px; padding:8px 12px; margin-left:10px; cursor:pointer;">X</button>
             `;
+            lista.appendChild(nuevoItem);
+            calcularCaja();
+        }
+
+        // Función para borrar estudios individuales
+        function eliminarEstudio(id, precio) {
+            let item = document.getElementById(`item-${id}`);
+            if(item) item.remove();
+            total -= precio;
+            if(total < 0) total = 0;
+            calcularCaja();
+        }
+
+        function calcularCaja() {
+            let anticipo = parseFloat(document.getElementById("anticipo").value) || 0;
+            let porcentajeDesc = parseFloat(document.getElementById("porcentajeDescuento").value) || 0;
             
-            // Efecto visual al tocar en celulares
-            item.ontouchstart = function() { this.style.backgroundColor = "#e8f8f5"; };
-            item.ontouchend = function() { this.style.backgroundColor = "white"; };
+            let montoDescuento = total * (porcentajeDesc / 100);
+            let totalFinal = total - montoDescuento;
+            let restante = totalFinal - anticipo;
+
+            let resumenTotal = `Total Original: $${total}`;
+            if(porcentajeDesc > 0) {
+                resumenTotal = `<s>$${total}</s> | Desc. ${porcentajeDesc}%: <span style="color: red;">-$${montoDescuento.toFixed(2)}</span> | Total a Pagar: $${totalFinal.toFixed(2)}`;
+            }
             
-            // Evento principal: Agrega sin cerrar la lista
-            item.onclick = function() {
-                agregarEstudioDirecto(est);
-            };
+            document.getElementById("granTotal").innerHTML = resumenTotal;
             
-            contenedor.appendChild(item);
-        });
-    } else {
-        contenedor.style.display = "none";
-    }
-}
+            let msg = document.getElementById("mensajeCobro");
+            if (total === 0) {
+                msg.innerHTML = ``;
+            } else if (restante > 0) {
+                msg.innerHTML = `<b style="color:red;">Restante a liquidar: $${restante.toFixed(2)} MXN</b>`;
+            } else {
+                msg.innerHTML = `<b style="color:green;">LIQUIDADO (Cambio: $${Math.abs(restante).toFixed(2)})</b>`;
+            }
+        }
 
-// Cierra la lista solo si tocan fuera del buscador
-document.addEventListener("click", function(event) {
-    if (!event.target.closest("#buscador") && !event.target.closest("#lista-resultados")) {
-        document.getElementById("lista-resultados").style.display = "none";
-    }
-});
+        function descargarPDF() {
+            let nombre = document.getElementById("nombrePaciente").value || "Paciente No Registrado";
+            let telefono = document.getElementById("telPaciente").value || "N/A";
+            let edad = document.getElementById("edadPaciente").value || "N/A";
+            let sexo = document.getElementById("sexoPaciente").value || "N/A";
+            let anticipo = document.getElementById("anticipo").value || "0";
+            
+            let listaEstudios = document.getElementById("listaOrden").innerHTML;
+            let textoTotal = document.getElementById("granTotal").innerText;
+            let mensajeCobro = document.getElementById("mensajeCobro").innerText;
 
-// Agrega a la orden con botón de borrar estilizado
-function agregarEstudioDirecto(estudioObj) {
-    let idUnico = Date.now() + Math.random(); 
-    total += estudioObj.precio;
-    
-    let lista = document.getElementById("listaOrden");
-    let nuevoItem = document.createElement("li");
-    nuevoItem.id = `item-${idUnico}`;
-    nuevoItem.style.marginBottom = "10px";
-    nuevoItem.innerHTML = `
-        <div style="flex-grow: 1;">
-            <strong>${estudioObj.nombre}</strong> <span style="color: #27ae60;">($${estudioObj.precio})</span>
-            <br><small style="color: #666;">⚠️ ${estudioObj.req}</small>
-        </div>
-        <button onclick="eliminarEstudio(${idUnico}, ${estudioObj.precio})" style="background:#ff7675; color:white; border:none; border-radius:4px; padding:8px 12px; margin-left:10px; cursor:pointer;">X</button>
-    `;
-    lista.appendChild(nuevoItem);
-    calcularCaja();
-}
+            if (total === 0) {
+                alert("⚠️ No hay estudios agregados a la orden.");
+                return;
+            }
 
-// Matemática de caja con manejo de descuentos
-function calcularCaja() {
-    let anticipo = parseFloat(document.getElementById("anticipo").value) || 0;
-    let porcentajeDesc = parseFloat(document.getElementById("porcentajeDescuento").value) || 0;
-    
-    let montoDescuento = total * (porcentajeDesc / 100);
-    let totalFinal = total - montoDescuento;
-    let restante = totalFinal - anticipo;
-
-    let resumenTotal = `Total Original: $${total}`;
-    if(porcentajeDesc > 0) {
-        resumenTotal = `<s>$${total}</s> | Desc. ${porcentajeDesc}%: <span style="color: red;">-$${montoDescuento.toFixed(2)}</span> | Total a Pagar: $${totalFinal.toFixed(2)}`;
-    }
-    
-    document.getElementById("granTotal").innerHTML = resumenTotal;
-    
-    let msg = document.getElementById("mensajeCobro");
-    if (total === 0) {
-        msg.innerHTML = ``;
-    } else if (restante > 0) {
-        msg.innerHTML = `<b style="color:red;">Restante a liquidar: $${restante.toFixed(2)} MXN</b>`;
-    } else {
-        msg.innerHTML = `<b style="color:green;">LIQUIDADO (Cambio: $${Math.abs(restante).toFixed(2)})</b>`;
-    }
-}
-// ==========================================
-// FUNCIÓN PARA GENERAR EL TICKET / PDF
-// ==========================================
-function descargarPDF() {
-    // Extraemos los datos del paciente
-    let nombre = document.getElementById("nombrePaciente").value || "Paciente No Registrado";
-    let telefono = document.getElementById("telPaciente").value || "N/A";
-    let edad = document.getElementById("edadPaciente").value || "N/A";
-    let sexo = document.getElementById("sexoPaciente").value || "N/A";
-    let anticipo = document.getElementById("anticipo").value || "0";
-    
-    // Extraemos los estudios y totales
-    let listaEstudios = document.getElementById("listaOrden").innerHTML;
-    let textoTotal = document.getElementById("granTotal").innerText;
-    let mensajeCobro = document.getElementById("mensajeCobro").innerText;
-
-    if (total === 0) {
-        alert("⚠️ No hay estudios agregados a la orden para imprimir.");
-        return;
-    }
-
-    // Armamos la ventana de impresión (Ticket)
-    let ventana = window.open('', '', 'height=600,width=800');
-    
-    ventana.document.write('<html><head><title>Ticket - BioLab</title>');
-    ventana.document.write('<style>');
-    ventana.document.write('body { font-family: Arial, sans-serif; padding: 20px; color: #2c3e50; }');
-    ventana.document.write('.header { text-align: center; border-bottom: 2px solid #2c3e50; padding-bottom: 10px; margin-bottom: 20px; }');
-    ventana.document.write('.datos-paciente { background: #f9f9f9; padding: 15px; border-radius: 5px; margin-bottom: 20px; font-size: 1.1em; }');
-    ventana.document.write('.estudios { margin-bottom: 20px; }');
-    ventana.document.write('.estudios button { display: none; } /* Oculta los botones rojos de borrar en el PDF */');
-    ventana.document.write('.estudios li { margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px; }');
-    ventana.document.write('.totales { text-align: right; font-size: 1.2em; border-top: 2px solid #2c3e50; padding-top: 15px; }');
-    ventana.document.write('</style></head><body>');
-    
-    // Encabezado
-    ventana.document.write('<div class="header">');
-    ventana.document.write('<h2>Laboratorio Clínico BioLab</h2>');
-    ventana.document.write('<p>Fecha: ' + new Date().toLocaleDateString() + ' | Hora: ' + new Date().toLocaleTimeString() + '</p>');
-    ventana.document.write('</div>');
-    
-    // Datos del Paciente (Incluyendo los nuevos)
-    ventana.document.write('<div class="datos-paciente">');
-    ventana.document.write('<p><strong>Paciente:</strong> ' + nombre + '</p>');
-    ventana.document.write('<p><strong>Teléfono:</strong> ' + telefono + ' | <strong>Edad:</strong> ' + edad + ' | <strong>Sexo:</strong> ' + sexo + '</p>');
-    ventana.document.write('</div>');
-    
-    // Lista de Estudios
-    ventana.document.write('<div class="estudios">');
-    ventana.document.write('<h3>Estudios Solicitados:</h3>');
-    ventana.document.write('<ul style="list-style:none; padding:0;">' + listaEstudios + '</ul>');
-    ventana.document.write('</div>');
-    
-    // Totales y Cobro
-    ventana.document.write('<div class="totales">');
-    ventana.document.write('<p>' + textoTotal + '</p>');
-    ventana.document.write('<p>Anticipo Pagado: $' + parseFloat(anticipo).toFixed(2) + '</p>');
-    ventana.document.write('<p>' + mensajeCobro + '</p>');
-    ventana.document.write('</div>');
-    
-    ventana.document.write('</body></html>');
-    
-    ventana.document.close();
-    ventana.focus();
-    
-    // Lanza la ventana de impresión
-    setTimeout(function() {
-        ventana.print();
-        ventana.close();
-    }, 250);
-}
+            let ventana = window.open('', '', 'height=600,width=800');
+            ventana.document.write('<html><head><title>Ticket - BioLab</title>');
+            ventana.document.write('<style>body{font-family:Arial;padding:20px;}.header{text-align:center;border-bottom:2px solid #000;padding-bottom:10px;margin-bottom:20px;}.datos{background:#f9f9f9;padding:15px;margin-bottom:20px;}.estudios button{display:none;}.estudios li{margin-bottom:10px;border-bottom:1px solid #eee;padding-bottom:5px;}.totales{text-align:right;font-size:1.2em;border-top:2px solid #000;padding-top:15px;}</style></head><body>');
+            ventana.document.write('<div class="header"><h2>Laboratorio Clínico BioLab</h2><p>Fecha: ' + new Date().toLocaleDateString() + ' | Hora: ' + new Date().toLocaleTimeString() + '</p></div>');
+            ventana.document.write('<div class="datos"><p><strong>Paciente:</strong> ' + nombre + '</p><p><strong>Teléfono:</strong> ' + telefono + ' | <strong>Edad:</strong> ' + edad + ' | <strong>Sexo:</strong> ' + sexo + '</p></div>');
+            ventana.document.write('<div class="estudios"><h3>Estudios Solicitados:</h3><ul style="list-style:none;padding:0;">' + listaEstudios + '</ul></div>');
+            ventana.document.write('<div class="totales"><p>' + textoTotal + '</p><p>Anticipo Pagado: $' + parseFloat(anticipo).toFixed(2) + '</p><p>' + mensajeCobro + '</p></div>');
+            ventana.document.write('</body></html>');
+            ventana.document.close();
+            ventana.focus();
+            setTimeout(function(){ventana.print();ventana.close();}, 250);
+        }
     </script>
-    
+</body>
+</html>
