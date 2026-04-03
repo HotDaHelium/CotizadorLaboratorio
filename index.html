@@ -5,9 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Punto de Venta - BioLab</title>
     
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     
     <style>
         body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f6f8; margin: 0; padding: 20px; color: #333; }
@@ -246,14 +245,14 @@
             }
         }
 
-        function descargarPDF() {
+function descargarPDF() {
             if (total === 0) {
                 alert("⚠️ No hay estudios agregados a la orden.");
                 return;
             }
 
-            // 1. Extraemos los datos
-            let nombre = document.getElementById("nombrePaciente").value || "Paciente_General";
+            // 1. Extraemos los datos del HTML
+            let nombre = document.getElementById("nombrePaciente").value || "Paciente General";
             let telefono = document.getElementById("telPaciente").value || "N/A";
             let edad = document.getElementById("edadPaciente").value || "N/A";
             let sexo = document.getElementById("sexoPaciente").value || "N/A";
@@ -264,83 +263,112 @@
             let totalFinal = total - montoDescuento;
             let restante = totalFinal - anticipo;
 
-            // 2. Armamos las filas de los estudios
-            let estudiosHTML = "";
+            // 2. Encendemos el motor matemático (jsPDF)
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF(); // Por defecto crea una hoja Tamaño Carta
+
+            // 3. Encabezado del Laboratorio
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(22);
+            doc.setTextColor(44, 62, 80);
+            doc.text("Laboratorio Clínico BioLab", 105, 20, { align: "center" });
+
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(10);
+            doc.setTextColor(100, 100, 100);
+            doc.text(`Fecha: ${new Date().toLocaleDateString()} | Hora: ${new Date().toLocaleTimeString()}`, 105, 28, { align: "center" });
+
+            // Una línea separadora elegante
+            doc.setDrawColor(44, 62, 80);
+            doc.setLineWidth(0.5);
+            doc.line(14, 32, 196, 32);
+
+            // 4. Datos del Paciente
+            doc.setFontSize(12);
+            doc.setTextColor(0, 0, 0);
+            
+            doc.setFont("helvetica", "bold");
+            doc.text("Paciente:", 14, 42);
+            doc.setFont("helvetica", "normal");
+            doc.text(nombre, 35, 42);
+
+            doc.setFont("helvetica", "bold");
+            doc.text("Teléfono:", 14, 48);
+            doc.setFont("helvetica", "normal");
+            doc.text(telefono, 35, 48);
+
+            doc.setFont("helvetica", "bold");
+            doc.text("Edad:", 90, 48);
+            doc.setFont("helvetica", "normal");
+            doc.text(edad, 105, 48);
+
+            doc.setFont("helvetica", "bold");
+            doc.text("Sexo:", 140, 48);
+            doc.setFont("helvetica", "normal");
+            doc.text(sexo, 155, 48);
+
+            // 5. Extraemos y armamos la Tabla de Estudios
+            let tableData = [];
             let items = document.querySelectorAll("#listaOrden li");
             items.forEach(li => {
                 let strong = li.querySelector("strong") ? li.querySelector("strong").innerText : "";
                 let span = li.querySelector("span") ? li.querySelector("span").innerText : "";
-                let small = li.querySelector("small") ? li.querySelector("small").innerText : "";
-
-                estudiosHTML += `
-                    <tr style="border-bottom: 1px solid #eee;">
-                        <td style="padding: 12px 5px; font-size: 14px; text-align: left;">
-                            <strong>${strong}</strong><br>
-                            <span style="color:#7f8c8d; font-size:12px;">${small}</span>
-                        </td>
-                        <td style="padding: 12px 5px; font-size: 15px; color: #27ae60; text-align: right; font-weight: bold; white-space: nowrap;">
-                            ${span}
-                        </td>
-                    </tr>
-                `;
+                let small = li.querySelector("small") ? li.querySelector("small").innerText.replace('⚠️ ', '') : "";
+                
+                // Agregamos el nombre y abajo las indicaciones
+                tableData.push([`${strong}\n(${small})`, span]);
             });
 
-            // 3. LA MAGIA: Creamos un elemento desconectado de tu página, con ancho rígido de 700px
-            let pdfWrapper = document.createElement('div');
-            pdfWrapper.style.width = '700px'; 
-            pdfWrapper.style.padding = '30px';
-            pdfWrapper.style.backgroundColor = '#ffffff';
-            pdfWrapper.style.color = '#333333';
-            pdfWrapper.style.fontFamily = 'Arial, sans-serif';
-            pdfWrapper.style.boxSizing = 'border-box';
+            // Dibujamos la tabla matemáticamente
+            doc.autoTable({
+                startY: 55,
+                head: [['Estudios Solicitados', 'Costo']],
+                body: tableData,
+                theme: 'grid',
+                headStyles: { fillColor: [44, 62, 80], fontSize: 12 },
+                styles: { fontSize: 10, cellPadding: 5 },
+                columnStyles: {
+                    0: { cellWidth: 140 }, // Columna ancha para el nombre
+                    1: { cellWidth: 40, halign: 'right', textColor: [39, 174, 96], fontStyle: 'bold' } // Columna verde para precios
+                }
+            });
 
-            pdfWrapper.innerHTML = `
-                <div style="text-align: center; border-bottom: 2px solid #2c3e50; padding-bottom: 15px; margin-bottom: 20px;">
-                    <h2 style="margin: 0; font-size: 24px; color: #2c3e50;">Laboratorio Clínico BioLab</h2>
-                    <p style="margin: 5px 0 0 0; font-size: 14px; color: #7f8c8d;">Fecha: ${new Date().toLocaleDateString()} | Hora: ${new Date().toLocaleTimeString()}</p>
-                </div>
+            // 6. Totales Matemáticos (Calculamos en qué coordenada Y terminó la tabla)
+            let finalY = doc.lastAutoTable.finalY + 15;
 
-                <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; background-color: #f9f9f9;">
-                    <tr>
-                        <td style="padding: 15px; border: 1px solid #ecf0f1; text-align: left;">
-                            <p style="margin: 0 0 8px 0; font-size: 15px;"><strong>Paciente:</strong> ${nombre}</p>
-                            <p style="margin: 0; font-size: 15px;"><strong>Teléfono:</strong> ${telefono} &nbsp;|&nbsp; <strong>Edad:</strong> ${edad} &nbsp;|&nbsp; <strong>Sexo:</strong> ${sexo}</p>
-                        </td>
-                    </tr>
-                </table>
+            doc.setFontSize(12);
+            doc.setTextColor(0, 0, 0);
+            doc.text(`Total Original: $${total.toFixed(2)}`, 196, finalY, { align: "right" });
 
-                <h3 style="font-size: 17px; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-bottom: 10px; text-align: left;">Estudios Solicitados:</h3>
-                <table style="width: 100%; border-collapse: collapse; margin-bottom: 35px;">
-                    ${estudiosHTML}
-                </table>
+            if (porcentajeDesc > 0) {
+                finalY += 8;
+                doc.setTextColor(231, 76, 60); // Letras rojas
+                doc.text(`Descuento Especial (${porcentajeDesc}%): -$${montoDescuento.toFixed(2)}`, 196, finalY, { align: "right" });
 
-                <table style="width: 100%; border-collapse: collapse; border-top: 2px solid #2c3e50; margin-top: 20px;">
-                    <tr>
-                        <td style="text-align: right; padding-top: 20px;">
-                            <p style="margin: 0 0 8px 0; font-size: 17px;"><strong>Total Original:</strong> $${total.toFixed(2)}</p>
-                            ${porcentajeDesc > 0 ? `<p style="margin: 0 0 8px 0; font-size: 15px; color: #e74c3c;"><strong>Descuento (${porcentajeDesc}%):</strong> -$${montoDescuento.toFixed(2)}</p><p style="margin: 0 0 8px 0; font-size: 17px;"><strong>Total a Pagar:</strong> $${totalFinal.toFixed(2)}</p>` : ''}
-                            <p style="margin: 0 0 8px 0; font-size: 15px;"><strong>Anticipo Pagado:</strong> $${anticipo.toFixed(2)}</p>
-                            <p style="margin: 15px 0 0 0; font-size: 18px; font-weight: bold; color: ${restante > 0 ? '#e74c3c' : '#27ae60'};">${restante > 0 ? `Restante a liquidar: $${restante.toFixed(2)} MXN` : `LIQUIDADO`}</p>
-                        </td>
-                    </tr>
-                </table>
-            `;
+                finalY += 8;
+                doc.setTextColor(0, 0, 0);
+                doc.setFont("helvetica", "bold");
+                doc.text(`Total a Pagar: $${totalFinal.toFixed(2)}`, 196, finalY, { align: "right" });
+                doc.setFont("helvetica", "normal");
+            }
 
-            // 4. Configuración blindada
-            let opciones = {
-                margin:       0.5,
-                filename:     `Ticket_${nombre.replace(/\s+/g, '_')}.pdf`,
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { 
-                    scale: 2,
-                    width: 700,
-                    windowWidth: 700 // Obligamos a la librería a fingir que está en una PC para que no aplaste el diseño
-                },
-                jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
-            };
+            finalY += 8;
+            doc.setTextColor(0, 0, 0);
+            doc.text(`Anticipo Pagado: $${anticipo.toFixed(2)}`, 196, finalY, { align: "right" });
 
-            // 5. Generamos el PDF pasando directamente el elemento de memoria
-            html2pdf().set(opciones).from(pdfWrapper).save();
+            finalY += 12;
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            if (restante > 0) {
+                doc.setTextColor(231, 76, 60); 
+                doc.text(`Restante a liquidar en entrega: $${restante.toFixed(2)} MXN`, 196, finalY, { align: "right" });
+            } else {
+                doc.setTextColor(39, 174, 96); 
+                doc.text(`CUENTA TOTALMENTE LIQUIDADA`, 196, finalY, { align: "right" });
+            }
+
+            // 7. Descarga directa a la vena
+            doc.save(`Ticket_${nombre.replace(/\s+/g, '_')}.pdf`);
         }
     </script>
 </body>
