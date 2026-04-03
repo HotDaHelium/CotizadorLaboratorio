@@ -265,7 +265,7 @@ function descargarPDF() {
             let totalFinal = total - montoDescuento;
             let restante = totalFinal - anticipo;
 
-            // 2. Extraemos los estudios y los metemos en una tabla inquebrantable
+            // 2. Extraemos los estudios (Estructura de Tabla inquebrantable)
             let estudiosHTML = "";
             let items = document.querySelectorAll("#listaOrden li");
             items.forEach(li => {
@@ -286,9 +286,9 @@ function descargarPDF() {
                 `;
             });
 
-            // 3. El Diseño del Ticket (Puro código, nada de coordenadas raras)
+            // 3. El Diseño del Ticket (Fondo blanco asegurado)
             let htmlParaPDF = `
-                <div style="width: 800px; padding: 30px; font-family: Arial, sans-serif; color: #333; background: #fff;">
+                <div style="width: 800px; padding: 40px; font-family: Arial, sans-serif; color: #333; background-color: #ffffff;">
                     
                     <div style="text-align: center; border-bottom: 2px solid #2c3e50; padding-bottom: 15px; margin-bottom: 20px;">
                         <h2 style="margin: 0; font-size: 24px; color: #2c3e50;">Laboratorio Clínico BioLab</h2>
@@ -322,20 +322,31 @@ function descargarPDF() {
                 </div>
             `;
 
-            // 4. Configuración Mágica
+            // 4. El Truco Maestro: Construirlo DETRÁS de tu sistema
+            let elementoOculto = document.createElement('div');
+            elementoOculto.innerHTML = htmlParaPDF;
+            elementoOculto.style.position = 'absolute';
+            elementoOculto.style.top = '0';
+            elementoOculto.style.left = '0';
+            elementoOculto.style.zIndex = '-1000'; // Esto lo esconde detrás del fondo de tu pantalla
+            
+            document.body.appendChild(elementoOculto);
+
             let opciones = {
-                margin:       0.3, // Margen parejito en toda la hoja
+                margin:       0.4, 
                 filename:     `Ticket_${nombre.replace(/\s+/g, '_')}.pdf`,
                 image:        { type: 'jpeg', quality: 1.0 },
-                html2canvas:  { 
-                    scale: 2, 
-                    windowWidth: 800 // Aquí le decimos a la cámara "Finge que mi celular mide 800px de ancho" para que no corte nada.
-                },
+                html2canvas:  { scale: 2, useCORS: true },
                 jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
             };
 
-            // 5. Generar PDF directo del código (sin ponerlo en pantalla)
-            html2pdf().set(opciones).from(htmlParaPDF).save();
+            // 5. El Freno de mano: Esperamos 200ms para que la computadora termine de pintarlo
+            setTimeout(() => {
+                html2pdf().set(opciones).from(elementoOculto).save().then(() => {
+                    // Solo lo borramos cuando el PDF ya se descargó seguro
+                    document.body.removeChild(elementoOculto);
+                });
+            }, 200);
         }
     </script>
 </body>
