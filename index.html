@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Punto de Venta - BioLab</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f6f8; margin: 0; padding: 20px; color: #333; }
@@ -12,6 +12,22 @@
         h3 { margin-top: 0; color: #2c3e50; border-bottom: 2px solid #ecf0f1; padding-bottom: 10px; }
         input, select { box-sizing: border-box; }
         input:focus, select:focus { outline: none; border-color: #3498db !important; }
+        /* Diseño elegante para la barra de desplazamiento de los estudios */
+        #lista-resultados::-webkit-scrollbar {
+            width: 8px;
+            display: block;
+        }
+        #lista-resultados::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+            border-radius: 8px;
+        }
+        #lista-resultados::-webkit-scrollbar-thumb {
+            background: #bdc3c7; 
+            border-radius: 8px;
+        }
+        #lista-resultados::-webkit-scrollbar-thumb:hover {
+            background: #95a5a6; 
+        }
     </style>
 </head>
 <body>
@@ -116,7 +132,7 @@
             });
         }
 
-        function filtrarEstudios() {
+function filtrarEstudios() {
             let input = document.getElementById("buscador").value.toLowerCase();
             let contenedor = document.getElementById("lista-resultados");
             contenedor.innerHTML = ""; 
@@ -135,13 +151,25 @@
                     item.style.padding = "15px";
                     item.style.borderBottom = "1px solid #f0f0f0";
                     item.style.cursor = "pointer";
+                    // Agregamos una transición suave para el clic
+                    item.style.transition = "all 0.15s ease";
                     item.innerHTML = `<div style="font-weight: bold; color: #2c3e50;">${est.nombre}</div><div style="font-size: 0.9em; color: #27ae60;">$${est.precio}</div>`;
                     
-                    // Tap-friendly effects
                     item.ontouchstart = function() { this.style.backgroundColor = "#e8f8f5"; };
                     item.ontouchend = function() { this.style.backgroundColor = "white"; };
                     
-                    item.onclick = function() { agregarEstudioDirecto(est); };
+                    item.onclick = function() { 
+                        // Efecto visual: se oscurece y se hace un 2% más pequeño por un instante
+                        this.style.backgroundColor = "#d1ccc0";
+                        this.style.transform = "scale(0.98)";
+                        
+                        // Esperamos un microsegundo para que el ojo humano vea el clic y luego lo agregamos
+                        setTimeout(() => {
+                            this.style.backgroundColor = "white";
+                            this.style.transform = "scale(1)";
+                            agregarEstudioDirecto(est); 
+                        }, 150);
+                    };
                     contenedor.appendChild(item);
                 });
             } else {
@@ -211,13 +239,12 @@
         }
 
         function descargarPDF() {
-            let nombre = document.getElementById("nombrePaciente").value || "Paciente No Registrado";
+            let nombre = document.getElementById("nombrePaciente").value || "Paciente_General";
             let telefono = document.getElementById("telPaciente").value || "N/A";
             let edad = document.getElementById("edadPaciente").value || "N/A";
             let sexo = document.getElementById("sexoPaciente").value || "N/A";
             let anticipo = document.getElementById("anticipo").value || "0";
             
-            let listaEstudios = document.getElementById("listaOrden").innerHTML;
             let textoTotal = document.getElementById("granTotal").innerText;
             let mensajeCobro = document.getElementById("mensajeCobro").innerText;
 
@@ -225,6 +252,51 @@
                 alert("⚠️ No hay estudios agregados a la orden.");
                 return;
             }
+
+            // 1. Clonamos la lista de estudios para borrarle los botones rojos de "X" y que no salgan en el PDF
+            let listaOriginal = document.getElementById("listaOrden");
+            let listaClonada = listaOriginal.cloneNode(true);
+            let botones = listaClonada.querySelectorAll('button');
+            botones.forEach(btn => btn.remove());
+
+            // 2. Creamos un contenedor virtual con el diseño del PDF
+            let elementoPDF = document.createElement('div');
+            elementoPDF.style.padding = "30px";
+            elementoPDF.style.fontFamily = "Arial, sans-serif";
+            elementoPDF.style.color = "#2c3e50";
+            
+            elementoPDF.innerHTML = `
+                <div style="text-align: center; border-bottom: 2px solid #2c3e50; padding-bottom: 10px; margin-bottom: 20px;">
+                    <h2>Laboratorio Clínico BioLab</h2>
+                    <p>Fecha: ${new Date().toLocaleDateString()} | Hora: ${new Date().toLocaleTimeString()}</p>
+                </div>
+                <div style="background: #f9f9f9; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+                    <p><strong>Paciente:</strong> ${nombre}</p>
+                    <p><strong>Teléfono:</strong> ${telefono} | <strong>Edad:</strong> ${edad} | <strong>Sexo:</strong> ${sexo}</p>
+                </div>
+                <div style="margin-bottom: 20px;">
+                    <h3>Estudios Solicitados:</h3>
+                    <ul style="list-style:none; padding:0;">${listaClonada.innerHTML}</ul>
+                </div>
+                <div style="text-align: right; font-size: 1.2em; border-top: 2px solid #2c3e50; padding-top: 15px;">
+                    <p>${textoTotal}</p>
+                    <p>Anticipo Pagado: $${parseFloat(anticipo).toFixed(2)}</p>
+                    <p>${mensajeCobro}</p>
+                </div>
+            `;
+
+            // 3. Configuramos la librería html2pdf para descargar
+            let opciones = {
+                margin:       0.5,
+                filename:     `Ticket_${nombre.replace(/\s+/g, '_')}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2 },
+                jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+
+            // 4. Ejecutamos la descarga directa
+            html2pdf().set(opciones).from(elementoPDF).save();
+        }
 
             let ventana = window.open('', '', 'height=600,width=800');
             ventana.document.write('<html><head><title>Ticket - BioLab</title>');
