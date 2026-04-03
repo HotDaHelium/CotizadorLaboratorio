@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Punto de Venta - BioLab</title>
+    <title>Cotizador Inteligente - BioLab</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     
     <style>
-      body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f6f8; margin: 0; padding: 20px; color: #333; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f6f8; margin: 0; padding: 20px; color: #333; }
         .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
         h3 { margin-top: 0; color: #2c3e50; border-bottom: 2px solid #ecf0f1; padding-bottom: 10px; }
         input, select { box-sizing: border-box; }
@@ -21,6 +21,7 @@
             overflow-y: scroll !important; /* Forza el carril SIEMPRE */
             scrollbar-width: thin !important;
             scrollbar-color: #888 #f1f1f1 !important;
+            -webkit-overflow-scrolling: touch;
         }
 
         /* Diseño grueso de la barra para PC y Android WebKit */
@@ -73,7 +74,7 @@
 
         <div class="card" style="position: relative;">
             <input type="text" id="buscador" placeholder="🔍 Buscar estudio (ej: Glucosa, Perfil...)" onkeyup="filtrarEstudios()" style="width: 100%; padding: 12px; font-size: 16px; border: 1px solid #ccc; border-radius: 4px;">
-            <div id="lista-resultados" style="display: none; position: absolute; z-index: 1000; background: white; width: 100%; max-height: 250px; overflow-y: auto; border: 1px solid #ddd; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-radius: 8px; margin-top: 5px;"></div>
+            <div id="lista-resultados" style="display: none; position: absolute; z-index: 1000; background: white; width: 100%; max-height: 250px; border: 1px solid #ddd; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-radius: 8px; margin-top: 5px;"></div>
         </div>
 
         <div class="card">
@@ -163,7 +164,7 @@
                     item.style.padding = "15px";
                     item.style.borderBottom = "1px solid #f0f0f0";
                     item.style.cursor = "pointer";
-                    item.style.transition = "all 0.15s ease"; // Efecto visual
+                    item.style.transition = "all 0.15s ease"; 
                     item.innerHTML = `<div style="font-weight: bold; color: #2c3e50;">${est.nombre}</div><div style="font-size: 0.9em; color: #27ae60;">$${est.precio}</div>`;
                     
                     item.ontouchstart = function() { this.style.backgroundColor = "#e8f8f5"; };
@@ -245,13 +246,12 @@
             }
         }
 
-function descargarPDF() {
+        function descargarPDF() {
             if (total === 0) {
                 alert("⚠️ No hay estudios agregados a la orden.");
                 return;
             }
 
-            // 1. Extraemos los datos
             let nombre = document.getElementById("nombrePaciente").value || "Paciente_General";
             let telefono = document.getElementById("telPaciente").value || "N/A";
             let edad = document.getElementById("edadPaciente").value || "N/A";
@@ -260,7 +260,6 @@ function descargarPDF() {
             let textoTotal = document.getElementById("granTotal").innerText;
             let mensajeCobro = document.getElementById("mensajeCobro").innerText;
 
-            // 2. Extraemos el texto de los estudios de forma limpia (sin el diseño de la pantalla)
             let estudiosHTML = "";
             let items = document.querySelectorAll("#listaOrden li");
             items.forEach(li => {
@@ -275,7 +274,6 @@ function descargarPDF() {
                 `;
             });
 
-            // 3. Construimos un diseño RÍGIDO y ancho especial para el PDF
             let htmlParaPDF = `
                 <div style="width: 750px; padding: 40px; font-family: Arial, sans-serif; color: #333; background: #fff;">
                     <div style="text-align: center; border-bottom: 2px solid #2c3e50; padding-bottom: 10px; margin-bottom: 20px;">
@@ -298,7 +296,6 @@ function descargarPDF() {
                 </div>
             `;
 
-            // 4. Mandamos a descargar
             let opciones = {
                 margin:       0.3,
                 filename:     `Ticket_${nombre.replace(/\s+/g, '_')}.pdf`,
@@ -308,8 +305,6 @@ function descargarPDF() {
             };
 
             html2pdf().set(opciones).from(htmlParaPDF).save();
-        }
-            html2pdf().set(opciones).from(elementoPDF).save();
         }
     </script>
 </body>
